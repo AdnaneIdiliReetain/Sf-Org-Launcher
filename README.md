@@ -25,7 +25,11 @@ A cloud icon appears in your system tray. Right-click it to see your orgs groupe
 - **Refresh** -- re-fetches the org list from the CLI
 - **Quit** -- exits the app
 
-## Bundle as Executable (optional)
+## Download Pre-built Executables
+
+Go to the [Releases](../../releases) page to download ready-to-run executables for Windows (`.exe`) and macOS. No Python required.
+
+## Build Locally (optional)
 
 ```bash
 pip install pyinstaller
@@ -33,3 +37,14 @@ pyinstaller --onefile --noconsole --name "SF Org Launcher" org_launcher.py
 ```
 
 The resulting executable will be in the `dist/` folder.
+
+## Releases via CI
+
+A GitHub Actions workflow automatically builds executables for Windows and macOS on every push to `master`. To publish a release:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+This creates a GitHub Release with both platform binaries attached.

@@ -1,0 +1,7 @@
+[
+    { "label": "Home",              "path": null },
+    { "label": "Setup",             "path": "lightning/setup/SetupOneHome/home" },
+    { "label": "Dev Console",       "path": "_ui/common/apex/debug/ApexCSIPage" },
+    { "label": "Flow Builder",      "path": "lightning/setup/Flows/home" },
+    { "label": "Deployment Status", "path": "lightning/setup/DeployStatus/home" }
+]

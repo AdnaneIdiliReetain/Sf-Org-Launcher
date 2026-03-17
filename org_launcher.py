@@ -11,6 +11,30 @@ import pystray
 from PIL import Image, ImageDraw
 
 _sf_cli_path = None
+_app_dir = Path(__file__).resolve().parent
+
+# Built-in defaults used when quick_pages.json is missing or invalid
+_DEFAULT_QUICK_PAGES = [
+    ("Home",              None),
+    ("Setup",             "lightning/setup/SetupOneHome/home"),
+    ("Dev Console",       "_ui/common/apex/debug/ApexCSIPage"),
+    ("Flow Builder",      "lightning/setup/Flows/home"),
+    ("Deployment Status", "lightning/setup/DeployStatus/home"),
+]
+
+
+def load_quick_pages():
+    """Load quick-launch pages from quick_pages.json next to this script.
+
+    Falls back to built-in defaults if the file is missing or malformed.
+    """
+    config_path = _app_dir / "quick_pages.json"
+    try:
+        with open(config_path, "r", encoding="utf-8") as f:
+            entries = json.load(f)
+        return [(e["label"], e.get("path")) for e in entries]
+    except (FileNotFoundError, json.JSONDecodeError, KeyError, TypeError):
+        return list(_DEFAULT_QUICK_PAGES)
 
 
 def find_sf_cli():
@@ -149,14 +173,21 @@ def fetch_orgs():
     return orgs, None
 
 
-def open_org(alias_or_username):
-    """Open an org in the default browser via sf org open."""
+def open_org(alias_or_username, path=None):
+    """Open an org in the default browser via sf org open.
+
+    If *path* is given it is forwarded with --path so the browser lands
+    directly on that Salesforce page (e.g. Setup, Dev Console).
+    """
     sf = find_sf_cli()
     if sf is None:
         return
+    cmd = [sf, "org", "open", "-o", alias_or_username]
+    if path:
+        cmd.extend(["--path", path])
     try:
         subprocess.Popen(
-            [sf, "org", "open", "-o", alias_or_username],
+            cmd,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0,
@@ -225,8 +256,19 @@ def build_menu(icon):
 
         for org in org_list:
             org_label = make_org_label(org)
-            callback = partial(lambda ident, *_: open_org(ident), org["identifier"])
-            items.append(pystray.MenuItem(org_label, callback))
+            ident = org["identifier"]
+
+            # Build a submenu with quick-launch page shortcuts
+            page_items = []
+            for page_label, page_path in load_quick_pages():
+                cb = partial(
+                    lambda i, p, *_: open_org(i, p), ident, page_path
+                )
+                page_items.append(pystray.MenuItem(page_label, cb))
+
+            items.append(
+                pystray.MenuItem(org_label, pystray.Menu(*page_items))
+            )
 
     if not items:
         items.append(pystray.MenuItem("No orgs found", None, enabled=False))

@@ -111,18 +111,13 @@ def fetch_orgs():
     seen_usernames = set()
     result_data = data.get("result", {})
 
-    for category, org_type in [
-        ("devHubs", "devhub"),
-        ("nonScratchOrgs", "production"),
-        ("sandboxes", "sandbox"),
-        ("scratchOrgs", "scratch"),
-        ("other", "other"),
-    ]:
+    for category in ("devHubs", "nonScratchOrgs", "sandboxes", "scratchOrgs", "other"):
         for org in result_data.get(category, []):
             alias = org.get("alias", "")
             username = org.get("username", "")
             status = org.get("connectedStatus", "Unknown")
             is_default = org.get("isDefaultUsername", False) or org.get("isDefaultDevHubUsername", False)
+            instance_url = org.get("instanceUrl", "")
 
             identifier = alias or username
             if not identifier:
@@ -132,6 +127,15 @@ def fetch_orgs():
             if dedup_key in seen_usernames:
                 continue
             seen_usernames.add(dedup_key)
+
+            if org.get("isDevHub"):
+                org_type = "devhub"
+            elif ".sandbox." in instance_url:
+                org_type = "sandbox"
+            elif ".scratch." in instance_url or category == "scratchOrgs":
+                org_type = "scratch"
+            else:
+                org_type = "production"
 
             orgs.append({
                 "alias": alias,
@@ -162,24 +166,17 @@ def open_org(alias_or_username):
 
 
 def make_org_label(org):
-    """Build a human-readable label for an org menu item."""
-    parts = []
-
-    if org["alias"]:
-        parts.append(org["alias"])
-        if org["username"]:
-            parts.append(f"({org['username']})")
-    else:
-        parts.append(org["username"])
+    """Build a clean label: alias only, with markers for default/expired."""
+    label = org["alias"] if org["alias"] else org["username"]
 
     if org["is_default"]:
-        parts.append("[default]")
+        label = f"* {label}"
 
-    status = org["status"].lower() if org["status"] else ""
+    status = (org["status"] or "").lower()
     if status not in ("connected", "active", "unknown", ""):
-        parts.append(f"[{org['status']}]")
+        label = f"{label}  [{org['status']}]"
 
-    return " ".join(parts)
+    return label
 
 
 def build_menu(icon):
@@ -208,28 +205,28 @@ def build_menu(icon):
 
     items = []
 
-    section_names = [
-        ("devhub", "Dev Hubs"),
+    sections = [
         ("production", "Production"),
         ("sandbox", "Sandboxes"),
         ("scratch", "Scratch Orgs"),
-        ("other", "Other Orgs"),
+        ("devhub", "Dev Hubs"),
     ]
 
-    for key, label in section_names:
+    for key, section_label in sections:
         org_list = grouped.get(key, [])
         if not org_list:
             continue
 
         org_list.sort(key=lambda o: (not o["is_default"], o["identifier"].lower()))
 
-        sub_items = []
+        if items:
+            items.append(pystray.Menu.SEPARATOR)
+        items.append(pystray.MenuItem(f"  {section_label}", None, enabled=False))
+
         for org in org_list:
             org_label = make_org_label(org)
             callback = partial(lambda ident, *_: open_org(ident), org["identifier"])
-            sub_items.append(pystray.MenuItem(org_label, callback))
-
-        items.append(pystray.MenuItem(label, pystray.Menu(*sub_items)))
+            items.append(pystray.MenuItem(org_label, callback))
 
     if not items:
         items.append(pystray.MenuItem("No orgs found", None, enabled=False))

@@ -7,7 +7,7 @@ echo "==> Installing build dependencies…"
 pip3 install --quiet pyinstaller pillow pystray
 
 echo "==> Building app…"
-pyinstaller sf_org_launcher.spec --noconfirm
+pyinstaller "SF Org Launcher.spec" --noconfirm
 
 echo ""
 echo "✅  Build complete!"

@@ -20,6 +20,10 @@ fi
 echo "==> Copying to /Applications…"
 rm -rf "$APP_DEST"
 cp -R "$APP_SRC" "$APP_DEST"
+
+# Strip quarantine flag so Gatekeeper doesn't block the unsigned app
+xattr -cr "$APP_DEST" 2>/dev/null || true
+
 echo "    ✅  Installed at ${APP_DEST}"
 
 # --- Create LaunchAgent for auto-start ---

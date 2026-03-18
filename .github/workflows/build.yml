@@ -43,6 +43,11 @@ jobs:
       - name: Build .app bundle
         run: pyinstaller "SF Org Launcher.spec" --noconfirm
 
+      - name: Ad-hoc sign and strip quarantine
+        run: |
+          codesign --force --deep -s - "dist/SF Org Launcher.app"
+          xattr -cr "dist/SF Org Launcher.app"
+
       - name: Create DMG
         run: |
           hdiutil create \

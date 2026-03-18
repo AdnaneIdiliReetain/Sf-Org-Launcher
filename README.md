@@ -55,6 +55,17 @@ install.bat
 
 This copies the exe to `%LOCALAPPDATA%\SF Org Launcher` and adds it to your startup programs.
 
+## macOS: First Launch
+
+Because the app is not signed with an Apple Developer certificate, macOS Gatekeeper will show a warning on the first launch. To open it:
+
+1. **Right-click** (or Control-click) the app and choose **Open**
+2. In the dialog that appears, click **Open** again
+
+This only needs to be done once — macOS remembers your choice and won't ask again.
+
+Alternatively, if you used `install.sh`, the quarantine flag is automatically stripped and the app should open without any warning.
+
 ## Customising Quick-Launch Pages
 
 Edit `quick_pages.json` to add, remove, or reorder the pages shown in each org's submenu:

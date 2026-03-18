@@ -11,7 +11,11 @@ import pystray
 from PIL import Image, ImageDraw
 
 _sf_cli_path = None
-_app_dir = Path(__file__).resolve().parent
+# When bundled by PyInstaller, data files live in sys._MEIPASS
+if getattr(sys, "frozen", False):
+    _app_dir = Path(sys._MEIPASS)
+else:
+    _app_dir = Path(__file__).resolve().parent
 
 # Built-in defaults used when quick_pages.json is missing or invalid
 _DEFAULT_QUICK_PAGES = [
@@ -89,7 +93,15 @@ def find_sf_cli():
 
 
 def create_icon_image():
-    """Generate a small Salesforce-style cloud icon programmatically."""
+    """Load the logo image if available, otherwise generate a programmatic cloud."""
+    logo_path = _app_dir / "logo.png"
+    if logo_path.is_file():
+        try:
+            return Image.open(logo_path)
+        except Exception:
+            pass
+
+    # Programmatic fallback
     size = 64
     img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
